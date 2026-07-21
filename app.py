@@ -25,9 +25,10 @@ DB_CONFIG = {
     'password': '', 
     'database': 'aiquizdb'
 }
-
+#connection base de donnee 
 def get_db_connection():
     return mysql.connector.connect(**DB_CONFIG)
+
 
 def extract_text_from_pdf(file_stream):
     reader = pypdf.PdfReader(file_stream)
