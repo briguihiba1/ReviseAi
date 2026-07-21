@@ -1,0 +1,6 @@
+flask
+mysql-connector-python
+google-generativeai
+pypdf
+python-docx
+Pillow

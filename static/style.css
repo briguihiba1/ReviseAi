@@ -1,0 +1,208 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    color: #333;
+    min-height: 100vh;
+}
+
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Cartes transparentes modernes */
+.card-moderne {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    margin-bottom: 25px;
+    
+    /* Animation au chargement */
+    animation: slideUp 0.6s ease-out forwards;
+    opacity: 0;
+    transform: translateY(30px);
+}
+
+@keyframes slideUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Style des options du quiz */
+.option-quiz {
+    background: #ffffff;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 12px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+}
+
+.option-quiz:hover {
+    border-color: #23a6d5;
+    background: #f1f8fc;
+    transform: translateX(8px);
+}
+
+/* Mise en évidence de la bonne réponse (utile pour le PDF corrigé) */
+.reponse-correcte {
+    border-color: #28a745;
+    background-color: #eafaf1;
+    font-weight: 600;
+    color: #155724;
+}
+
+/* Boutons stylisés */
+.btn-custom {
+    background: linear-gradient(135deg, #6e8efb, #a777e3);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 16px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-custom:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    color: white;
+}
+
+/* Améliorations pour les options cliquables du quiz */
+.option-quiz {
+    cursor: pointer;
+}
+
+.option-quiz input[type="radio"] {
+    transform: scale(1.2);
+    cursor: pointer;
+}
+
+/* Couleurs appliquées PAR LE JAVASCRIPT après la validation */
+.reponse-correcte {
+    border-color: #28a745 !important;
+    background-color: #eafaf1 !important;
+    color: #155724 !important;
+    font-weight: bold;
+}
+
+.reponse-incorrecte {
+    border-color: #dc3545 !important;
+    background-color: #f8d7da !important;
+    color: #721c24 !important;
+}
+
+/* Formater correctement les listes et titres générés par l'IA dans le résumé */
+.contenu-resume h3 {
+    color: #a777e3;
+    font-weight: 600;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.contenu-resume ul {
+    margin-bottom: 1.5rem;
+}
+
+/* --- GESTION DES SAUTS DE PAGE POUR LE PDF --- */
+
+/* Empêcher de couper un bloc de question ou une option en deux */
+.question-block, .option-quiz {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+}
+
+/* Empêcher de couper les paragraphes, les listes ou les titres du résumé en deux */
+.contenu-resume p, 
+.contenu-resume ul, 
+.contenu-resume li, 
+.contenu-resume h2, 
+.contenu-resume h3 {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+}
+
+/* S'assurer que le titre reste avec son paragraphe suivant */
+.contenu-resume h2, 
+.contenu-resume h3 {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+}
+
+
+
+/* --- AMÉLIORATION DU DESIGN POUR L'EXPORT PDF --- */
+@media print {
+    body {
+        background-color: #ffffff !important;
+        color: #000;
+        font-family: 'Arial', sans-serif;
+    }
+
+    #zone-a-exporter {
+        padding: 20px;
+        width: 100%;
+    }
+
+    /* Organisation en cartes propres */
+    .card-moderne {
+        border: 1px solid #ddd !important;
+        padding: 20px;
+        margin-bottom: 25px;
+        border-radius: 0 !important; /* Pas de bords arrondis à l'impression */
+        box-shadow: none !important;
+    }
+
+    /* Titres structurés */
+    h2, h3 {
+        color: #2c3e50 !important;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 10px;
+        margin-top: 30px;
+    }
+
+    /* Listes lisibles */
+    ul {
+        list-style-type: square;
+        padding-left: 20px;
+    }
+
+    li {
+        margin-bottom: 10px;
+        line-height: 1.5;
+    }
+
+    /* Quiz : Rendre les choix clairs */
+    .question-block {
+        margin-bottom: 30px;
+        page-break-inside: avoid; /* Évite de couper une question en deux */
+    }
+
+    .option-quiz {
+        display: block;
+        padding: 8px;
+        border: 1px solid #eee;
+        margin-bottom: 5px;
+    }
+
+    /* Cacher les éléments inutiles à l'impression */
+    #bouton-valider-container, #btn-export {
+        display: none !important;
+    }
+}

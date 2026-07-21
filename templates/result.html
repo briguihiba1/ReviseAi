@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ton Résumé & Quiz</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+
+<div class="container py-5" style="max-width: 900px;">
+    
+    <div class="mb-4">
+        <a href="/" class="btn btn-light rounded-pill shadow-sm">⬅ Retour</a>
+    </div>
+
+    <!-- ZONE À EXPORTER EN PDF -->
+    <div id="zone-a-exporter">
+        
+        <!-- Section Résumé (Affichée seulement si l'action le demande) -->
+        {% if data.resume and action in ['both', 'resume'] %}
+        <div class="card-moderne mb-5">
+            <h2 class="h4 mb-4 border-bottom pb-2">📝 Résumé du cours</h2>
+            <!-- L'ajout de | safe permet d'interpréter les balises HTML de l'IA (h3, ul, etc.) -->
+            <div class="contenu-resume" style="line-height: 1.8;">
+                {{ data.resume | safe }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Section Quiz -->
+        {% if data.quiz and action in ['both', 'quiz'] %}
+        <div class="card-moderne" style="animation-delay: 0.2s;">
+            <h2 class="h4 mb-4 border-bottom pb-2">🎯 Quiz d'entraînement</h2>
+            
+            <form id="quiz-form">
+                {% for q in data.quiz %}
+                <!-- 1. ON SAUVEGARDE LE NUMÉRO DE LA QUESTION ICI -->
+                {% set q_index = loop.index %}
+                
+                <div class="question-block mb-4">
+                    <h5 class="mb-3">{{ q_index }}. {{ q.question }}</h5>
+                    
+                    <div class="options-container">
+                        {% for option in q.options %}
+                            <label class="option-quiz w-100" data-correct="{{ 'true' if option == q.reponse_correcte else 'false' }}">
+                                <!-- 2. ON UTILISE q_index POUR QUE CHAQUE QUESTION SOIT INDÉPENDANTE -->
+                                <input type="radio" name="question_{{ q_index }}" value="{{ option }}" class="me-3">
+                                <span class="option-texte">{{ option }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <div class="text-center mt-5" id="bouton-valider-container">
+                    <button type="submit" class="btn btn-custom btn-lg">Valider mes réponses ✅</button>
+                </div>
+            </form>
+
+
+            <!-- Zone de résultat (Affichée par le JS) -->
+            <div id="quiz-result" class="text-center mt-5" style="display: none;">
+                <h3 class="mb-3 fw-bold">Score : <span id="score-display" class="text-primary"></span></h3>
+                <!-- Le bouton PDF est dans la zone à exporter, mais on peut le cacher pendant l'export si on veut -->
+                <button onclick="exporterPDF()" class="btn btn-custom" id="btn-export">📄 Télécharger en PDF (Corrigé)</button>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+    <!-- FIN DE LA ZONE À EXPORTER -->
+</div>
+
+<script>
+// Gestion de la correction du Quiz
+const quizForm = document.getElementById('quiz-form');
+if (quizForm) {
+    quizForm.addEventListener('submit', function(e) {
+        e.preventDefault(); // Empêche le rechargement
+        
+        let score = 0;
+        const totalQuestions = {{ data.quiz|length if data.quiz else 0 }};
+        const questionBlocks = document.querySelectorAll('.question-block');
+
+        questionBlocks.forEach((block) => {
+            const selectedInput = block.querySelector(`input[type="radio"]:checked`);
+            const allLabels = block.querySelectorAll('.option-quiz');
+
+            allLabels.forEach(label => {
+                const isCorrect = label.getAttribute('data-correct') === 'true';
+                const input = label.querySelector('input');
+                
+                // Désactiver les choix après validation
+                input.disabled = true;
+
+                if (isCorrect) {
+                    label.classList.add('reponse-correcte');
+                    if (selectedInput && selectedInput.value === input.value) {
+                        score++;
+                    }
+                } else if (selectedInput && selectedInput.value === input.value) {
+                    label.classList.add('reponse-incorrecte');
+                }
+            });
+        });
+
+        // Afficher le score et le bouton PDF
+        document.getElementById('bouton-valider-container').style.display = 'none';
+        document.getElementById('score-display').innerText = `${score} / ${totalQuestions}`;
+        document.getElementById('quiz-result').style.display = 'block';
+    });
+}
+
+// Fonction d'exportation PDF
+function exporterPDF() {
+    const element = document.getElementById('zone-a-exporter');
+    const btnExport = document.getElementById('btn-export');
+    
+    // 1. Cacher le bouton PDF pendant l'export
+    if (btnExport) btnExport.style.display = 'none';
+    
+    // 2. SAUVEGARDER LES STYLES D'ORIGINE
+    const originalHeight = element.style.height;
+    const originalOverflow = element.style.overflow;
+    
+    // 3. FORCER L'ÉLÉMENT À PRENDRE TOUTE LA HAUTEUR (Correction de la coupure)
+    element.style.height = 'max-content';
+    element.style.overflow = 'visible';
+    element.style.color = '#000000'; // Forcer le texte global en noir
+    
+    // 4. Configuration optimisée pour html2canvas
+    const opt = {
+        margin:       [15, 10, 15, 10], 
+        filename:     'Fiche_Revision_et_Quiz.pdf',
+        image:        { type: 'jpeg', quality: 1 },
+        html2canvas:  { 
+            scale: 2, 
+            useCORS: true, 
+            backgroundColor: '#ffffff',
+            scrollY: 0,
+            // C'est cette ligne qui force la librairie à lire jusqu'en bas du quiz :
+            windowHeight: element.scrollHeight 
+        },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak:    { mode: ['css', 'legacy'] } 
+    };
+
+    const cards = document.querySelectorAll('.card-moderne');
+    cards.forEach(card => {
+        card.style.background = '#ffffff';
+        card.style.boxShadow = 'none';
+        card.style.border = 'none';
+        
+        // Retrait des animations pour éviter le problème de contraste
+        card.style.animation = 'none';       
+        card.style.opacity = '1';            
+        card.style.transform = 'none';       
+        card.style.color = '#000000';        
+    });
+    
+    // 5. Génération du PDF
+    html2pdf().set(opt).from(element).save().then(() => {
+        
+        // 6. RESTAURER LE DESIGN ORIGINAL (Bootstrap et Animations)
+        element.style.height = originalHeight;
+        element.style.overflow = originalOverflow;
+        element.style.color = '';
+        
+        cards.forEach(card => {
+            card.style.background = '';
+            card.style.boxShadow = '';
+            card.style.border = '';
+            card.style.animation = '';
+            card.style.opacity = '';
+            card.style.transform = '';
+            card.style.color = '';
+        });
+        
+        if (btnExport) btnExport.style.display = 'inline-block';
+    });
+}
+</script>
+
+</body>
+</html>
